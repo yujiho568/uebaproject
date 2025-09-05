@@ -9,15 +9,37 @@ __pycache__/
 venv/
 .venv/
 
-# VSCode
-.vscode/
-
 # Environment variables
 .env
 
 # DB
 *.db
 *.sqlite
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node.js
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Mac
 .DS_Store
