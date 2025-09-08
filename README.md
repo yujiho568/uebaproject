@@ -1,12 +1,58 @@
-# React + Vite
+# UEBA Project - Local Development (No Docker)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project consists of a FastAPI backend and a React (Vite) frontend.
 
-Currently, two official plugins are available:
+## Prerequisites
+- Python 3.12 (or 3.9+ if running outside Homebrew env)
+- Node.js 18+
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Backend (FastAPI)
 
-## Expanding the ESLint configuration
+1. Create and activate a virtual environment (recommended):
+   - macOS/Linux:
+     ```bash
+     python3 -m venv .venv && source .venv/bin/activate
+     ```
+   - Windows (PowerShell):
+     ```powershell
+     py -3 -m venv .venv; .venv\Scripts\Activate.ps1
+     ```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Environment variables (optional in local dev):
+   - The app now has sensible defaults for local development:
+     - `SECRET_KEY`: defaults to `dev-secret-key`
+     - `ALGORITHM`: defaults to `HS256`
+     - `ACCESS_TOKEN_EXPIRE_MINUTES`: defaults to `30`
+     - `DATABASE_URL`: defaults to `sqlite:///./ueba_system.db`
+   - To customize, create a `.env` file (see `.env.example`).
+4. Run the backend:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+5. Health check:
+   - Visit `http://localhost:8000/health`.
+   - API base path: `http://localhost:8000/api/v1`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Frontend (Vite + React)
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the dev server:
+   ```bash
+   npm run dev
+   ```
+3. The frontend runs at `http://localhost:5173`.
+   - API requests to `/api/...` are proxied to `http://localhost:8000`.
+
+## Notes
+- To use PostgreSQL locally instead of SQLite, set `DATABASE_URL` in `.env`, e.g.:
+  ```env
+  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/ueba
+  ```
+- If using Homebrew Python 3.12, ensure you install the requirements using that interpreter, e.g. `pip3.12 install -r requirements.txt`.
+- CORS is enabled for `http://localhost:5173` to simplify development.

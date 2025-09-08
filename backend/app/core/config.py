@@ -6,12 +6,13 @@ UEBA System Configuration Management
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+import os
 
 class Settings(BaseSettings):
-    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    SECRET_KEY: str = Field(default=os.environ.get("SECRET_KEY", "dev-secret-key"), env="SECRET_KEY")
     ALGORITHM: str = Field(default="HS256", env="ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    DATABASE_URL: str = Field(default=os.environ.get("DATABASE_URL", "sqlite:///./ueba_system.db"), env="DATABASE_URL")
 
     class Config:
         env_file = ".env"
