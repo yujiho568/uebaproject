@@ -7,6 +7,7 @@ import Analytics from './pages/Analytics'
 import Alerts from './pages/Alerts'
 import About from './pages/About'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import { AuthProvider, ProtectedRoute } from './auth/AuthContext'
 import './App.css'
 
@@ -18,6 +19,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/*"
             element={(
