@@ -3,11 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
-import Analytics from './pages/Analytics'
-import Alerts from './pages/Alerts'
-import About from './pages/About'
+import Results from './pages/Results'
+import Connect from './pages/Connect'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Guide from './pages/Guide'
+import Settings from './pages/Settings'
 import { AuthProvider, ProtectedRoute } from './auth/AuthContext'
 import './App.css'
 
@@ -31,9 +32,10 @@ function App() {
                     <main className="app-content">
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/alerts" element={<Alerts />} />
-                        <Route path="/about" element={<About />} />
+                        <Route path="/results" element={<Results />} />
+                        <Route path="/connect" element={<Connect />} />
+                        <Route path="/guide" element={<Guide />} />
+                        <Route path="/settings" element={<Settings />} />
                       </Routes>
                     </main>
                   </div>
