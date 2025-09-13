@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -14,7 +14,7 @@ class UserRead(UserBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserInDB(UserBase):
     id: int
@@ -22,14 +22,14 @@ class UserInDB(UserBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True 
+        from_attributes = True 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    email: str | None = None
+    email: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr

@@ -62,18 +62,18 @@ class AwsCredentialOut(BaseModel):
     id: int
     user_id: int
     name: str
-    region: str | None = None
+    region: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    last_used_at: datetime | None = None
-    access_key_id_last4: str | None = Field(None, description="Access Key ID 마지막 4자리")
+    last_used_at: Optional[datetime] = None
+    access_key_id_last4: Optional[str] = Field(None, description="Access Key ID 마지막 4자리")
     has_secret: bool = Field(False, description="secret_access_key 존재 여부")
 
     class Config:
         from_attributes = True  # SQLAlchemy ORM 직렬화 허용
 
 
-def _mask_last4(v: str | None) -> str | None:
+def _mask_last4(v: Optional[str]) -> Optional[str]:
     if not v:
         return None
     return v[-4:].rjust(len(v), "*")
