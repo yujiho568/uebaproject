@@ -159,7 +159,7 @@ function Results() {
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-        <label style={{ fontWeight: 600 }}>자격증명</label>
+        <label style={{ fontWeight: 600 }}>자격 증명</label>
         <select
           value={selectedCred}
           onChange={(e) => setSelectedCred(e.target.value)}
@@ -173,7 +173,7 @@ function Results() {
           ))}
         </select>
 
-        <label style={{ fontWeight: 600 }}>risk 필터</label>
+        <label style={{ fontWeight: 600 }}>Risk Filter</label>
         <select
           value={threshold}
           onChange={(e) => {

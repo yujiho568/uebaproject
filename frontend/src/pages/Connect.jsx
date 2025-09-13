@@ -215,7 +215,7 @@ function Connect() {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <button type="submit" disabled={connecting}
-            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #2563eb', background: connecting ? '#93c5fd' : '#3b82f6', color: 'white' }}>
+            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #000000', background: connecting ? '#93c5fd' : '#1e3a8a', color: 'white' }}>
             {connecting ? '연결 중...' : '연결'}
           </button>
         </div>

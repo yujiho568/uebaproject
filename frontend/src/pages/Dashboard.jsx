@@ -156,7 +156,7 @@ function LineChart({ title, series, width = 720, height = 260 }) {
         {poly ? (
           <polyline fill="none" stroke="#3b82f6" strokeWidth="2" points={poly} />
         ) : (
-          <text x={padding.left} y={height / 2} fill="#6b7280">데이터가 없습니다</text>
+          <text x={width/2} y={height / 2} fill="#6b7280">No Data</text>
         )}
 
         {/* 툴팁 */}
@@ -471,7 +471,7 @@ function Dashboard() {
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-        <label style={{ fontWeight: 600 }}>자격증명 :</label>
+        <label style={{ fontWeight: 600 }}>자격 증명 :</label>
         <select
           value={selectedCred}
           onChange={(e) => setSelectedCred(e.target.value)}
@@ -488,12 +488,12 @@ function Dashboard() {
         <button
           onClick={handleSyncS3}
           disabled={syncing || !selectedCred}
-          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #2563eb', background: syncing ? '#93c5fd' : '#3b82f6', color: '#fff' }}
+          style={{ padding: '1px 5px', borderRadius: 8, border: '1px solid #2563eb', background: syncing ? '#93c5fd' : '#1e3a8a', color: '#fff' }}
         >
           {syncing ? '동기화 중...' : 'S3 동기화'}
         </button>
 
-        {credErr && <div style={{ color: '#ef4444' }}>자격증명 오류: {credErr}</div>}
+        {credErr && <div style={{ color: '#ef4444' }}>자격 증명 오류: {credErr}</div>}
         {message && (
           <div
             style={{

@@ -12,18 +12,27 @@ export default function Guide() {
     () => [
       {
         id: "intro",
-        title: "Terraform 설치",
-        body: (
-          <div className="space-y-3 text-gray-700">
-            <p>
-              사용자 AWS CloudShell에 접속하여 테라폼을 설치합니다.
-            </p>
+    title: "Terraform 설치",
+    body: (
+      <div className="space-y-3 text-gray-700">
+        <p>
+          <a
+            href="https://console.aws.amazon.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            AWS Console
+          </a>
+          에 접속하여 테라폼을 설치합니다.
+        </p>
             <img
+              width="100%"
               src="/step1.png"
               alt="Terraform installation screenshot"
-              className="rounded-xl border shadow-sm"
+              className="rounded-xl border shadow-sm w-full max-w-full h-auto object-contain"
             />
-            <pre className="bg-gray-50 rounded-xl p-4 overflow-auto text-sm">
+            <pre className="bg-gray-50 rounded-xl p-4 overflow-auto" style={{ fontSize: "18px" }}>
               {`
 curl -fsSL -o terraform.zip https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip
 unzip terraform.zip
@@ -87,9 +96,10 @@ terraform apply -auto-approve
         body: (
           <div className="space-y-3 text-gray-700">
             <img
+              width="100%"
               src="/step4.png"
               alt="Terraform installation screenshot"
-              className="rounded-xl border shadow-sm"
+              className="rounded-xl border shadow-sm w-full max-w-full h-auto object-contain"
             />
             <p>그림과 같은 오류가 발생 시 Docker 이미지 빌드 후 ECR에 푸시합니다.</p>
             <pre className="bg-gray-50 rounded-xl p-4 overflow-auto text-sm">
@@ -103,7 +113,7 @@ terraform apply -auto-approve
               className="inline-block px-4 py-2 rounded-2xl bg-gray-900 text-white hover:opacity-90"
             >📦 Download processing_container.zip</a>
             <p>먼저 processing_container.zip 파일을 로컬에 다운로드 및 압축 해제 후, Docker 이미지를 빌드하고 ECR에 푸시합니다..</p>
-            <pre className="bg-gray-50 rounded-xl p-4 overflow-auto text-sm">
+            <pre className="bg-gray-50 rounded-xl p-4 overflow-auto" style={{ fontSize: "13px" }}>
 
               {`unzip processing_container.zip
 cd processing_container
@@ -123,9 +133,10 @@ docker buildx build \
 `}
             </pre>
             <img
+              width="100%"
               src="/step4-1.png"
               alt="Terraform installation screenshot"
-              className="rounded-xl border shadow-sm"
+              className="rounded-xl border shadow-sm w-full max-w-full h-auto object-contain"
             />
             <a
               href="/realtime_container.zip"
@@ -133,7 +144,7 @@ docker buildx build \
               className="inline-block px-4 py-2 rounded-2xl bg-gray-900 text-white hover:opacity-90"
             >📦 Download realtime_container.zip</a>
             <p>다음으로 realtime_container.zip 파일을 로컬에 다운로드 및 압축 해제 후, Docker 이미지를 빌드하고 ECR에 푸시합니다.</p>
-            <pre className="bg-gray-50 rounded-xl p-4 overflow-auto text-sm">
+            <pre className="bg-gray-50 rounded-xl p-4 overflow-auto" style={{ fontSize: "15px" }}>
               {`unzip realtime_container.zip
 cd realtime_container
 
@@ -150,9 +161,10 @@ docker buildx build \
 `}
             </pre>
             <img
+              width="100%"
               src="/step4-2.png"
               alt="Terraform installation screenshot"
-              className="rounded-xl border shadow-sm"
+              className="rounded-xl border shadow-sm w-full max-w-full h-auto object-contain"
             />
           </div>
         ),
@@ -171,9 +183,10 @@ docker buildx build \
               마지막 terraform apply가 완료되면 UEBA 구축이 완료됩니다.
             </p>
             <img
+              width="100%"
               src="/step5.png"
               alt="Terraform installation screenshot"
-              className="rounded-xl border shadow-sm"
+              className="rounded-xl border shadow-sm w-full max-w-full h-auto object-contain"
             />
           </div>
         ),
@@ -242,8 +255,9 @@ docker buildx build \
           type="button"
           onClick={prev}
           disabled={atStart}
-          className="px-4 py-2 rounded-2xl border bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+          className="px-4 py-2 rounded-2xl border border-gray-400 bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 hover:shadow-sm font-medium"
           aria-disabled={atStart}
+          style={{ width: '10%', padding: 10, marginBottom: 12, backgroundColor: '#1e3a8a', color: '#ffffff', border: 'none', borderRadius: 4 }}
         >
           Back
         </button>
@@ -251,7 +265,8 @@ docker buildx build \
           <button
             type="button"
             onClick={restart}
-            className="px-4 py-2 rounded-2xl bg-gray-900 text-white hover:opacity-90"
+            //className="px-4 py-2 rounded-2xl bg-gray-900 text-white hover:opacity-90"
+            style={{ width: '10%', padding: 10, marginBottom: 12,marginLeft : 800, backgroundColor: '#1e3a8a', color: '#ffffff', border: 'none', borderRadius: 4 }}
           >
             Start Over
           </button>
@@ -259,7 +274,9 @@ docker buildx build \
           <button
             type="button"
             onClick={next}
-            className="px-4 py-2 rounded-2xl bg-gray-900 text-white hover:opacity-90"
+            //className="px-4 py-2 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md transition-colors font-semibold"
+            
+            style={{ width: '10%', padding: 10, marginBottom: 12,marginLeft : 800, backgroundColor: '#1e3a8a', color: '#ffffff', border: 'none', borderRadius: 4 }}
           >
             Next
           </button>

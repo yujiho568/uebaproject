@@ -36,7 +36,7 @@ function Login() {
         <label style={{ display: 'block', marginBottom: 8 }}>비밀번호</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: 8, marginBottom: 16 }} />
         {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10, marginBottom: 12 }}>
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10, marginBottom: 12, backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: 4 }}>
           {loading ? '로그인 중...' : '로그인'}
         </button>
         <div style={{ textAlign: 'center' }}>
