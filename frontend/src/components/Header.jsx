@@ -14,7 +14,7 @@ function Header({ onToggleSidebar }) {
         <span className="app-header__menu-line"></span>
         <span className="app-header__menu-line"></span>
       </button>
-      <div className="app-header__title">Cloud-native User & Entity Behavior Analytics</div>
+      <div className="app-header__title">User & Entity Behavior Analytics</div>
       <UserProfile />
     </header>
   )
