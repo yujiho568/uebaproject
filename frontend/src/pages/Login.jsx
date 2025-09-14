@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import '../styles/auth.css'
 
 function Login() {
   const { login } = useAuth()
@@ -28,21 +29,57 @@ function Login() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center' }}>
-      <form onSubmit={handleSubmit} style={{ width: 320, padding: 24, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff' }}>
-        <h2 style={{ marginBottom: 16 }}>로그인</h2>
-        <label style={{ display: 'block', marginBottom: 8 }}>이메일</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: 8, marginBottom: 12 }} />
-        <label style={{ display: 'block', marginBottom: 8 }}>비밀번호</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: 8, marginBottom: 16 }} />
-        {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10, marginBottom: 12, backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: 4 }}>
-          {loading ? '로그인 중...' : '로그인'}
-        </button>
-        <div style={{ textAlign: 'center' }}>
-          <Link to="/register">회원가입</Link>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">U</div>
+          <h1 className="auth-title">로그인</h1>
+          <p className="auth-subtitle">UEBA 시스템에 오신 것을 환영합니다</p>
         </div>
-      </form>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-field">
+            <label className="auth-label">이메일</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+              className="auth-input"
+              placeholder="이메일을 입력하세요"
+            />
+          </div>
+          
+          <div className="auth-field">
+            <label className="auth-label">비밀번호</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+              className="auth-input"
+              placeholder="비밀번호를 입력하세요"
+            />
+          </div>
+          
+          {error && <div className="auth-error">{error}</div>}
+          
+          <button type="submit" disabled={loading} className="auth-button">
+            {loading ? (
+              <span className="auth-loading">
+                <span className="auth-spinner"></span>
+                로그인 중...
+              </span>
+            ) : (
+              '로그인'
+            )}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          <Link to="/register" className="auth-link">계정이 없으신가요? 회원가입</Link>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,11 +1,13 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import '../styles/dashboard.css'
 
 const navItems = [
-  { path: '/', label: 'Dashboard' },
-  { path: '/results', label: 'Results' },
-  { path: '/connect', label: 'Connect' },
-  { path: '/guide', label: 'Guide' },
+  { path: '/', label: 'Dashboard', icon: '📊' },
+  { path: '/results', label: 'Results', icon: '📈' },
+  { path: '/connect', label: 'Connect', icon: '🔗' },
+  { path: '/guide', label: 'Guide', icon: '📚' },
+  { path: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
 function Sidebar({ open }) {
@@ -21,6 +23,7 @@ function Sidebar({ open }) {
             }
             end={item.path === '/'}
           >
+            <span style={{ fontSize: '18px' }}>{item.icon}</span>
             {item.label}
           </NavLink>
         ))}

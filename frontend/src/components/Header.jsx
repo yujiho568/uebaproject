@@ -1,5 +1,6 @@
 import React from 'react'
 import UserProfile from './UserProfile'
+import '../styles/dashboard.css'
 
 function Header({ onToggleSidebar }) {
   return (
@@ -14,7 +15,7 @@ function Header({ onToggleSidebar }) {
         <span className="app-header__menu-line"></span>
         <span className="app-header__menu-line"></span>
       </button>
-      <div className="app-header__title">User & Entity Behavior Analytics</div>
+      <div className="app-header__title">UEBA Analytics Platform</div>
       <UserProfile />
     </header>
   )
