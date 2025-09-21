@@ -8,9 +8,15 @@ from app.models.user import User
 from app.api.v1.endpoints.user import get_current_user  # 인증 의존성
 from typing import Optional
 import boto3
+import time
 from botocore.config import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, BotoCoreError
 from datetime import datetime
+import json
+import logging
+
+logger = logging.getLogger("quarantine")
+logger.setLevel(logging.INFO)
 
 from app.db.database import get_db
 from app.models.aws_credential import AwsCredential
@@ -23,6 +29,20 @@ from app.crud import aws_credential as crud
 
 
 router = APIRouter(prefix="/credentials/{user_id}", tags=["credentials"])
+
+# 모든 액션을 Deny하는 인라인 정책 (필요 시 수정 가능)
+QUARANTINE_DENY_ALL = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyAll",
+            "Effect": "Deny",
+            "Action": "*",
+            "Resource": "*"
+        }
+    ]
+}
+
 
 # ---------- Schemas ----------
 class AwsCredsIn(BaseModel):
@@ -58,6 +78,18 @@ class CredListOut(BaseModel):
     class Config:
         from_attributes = True
         
+class QuarantineOut(BaseModel):
+    applied: Optional[bool]                   # True=차단 / False=정상 / None=확인불가
+    policy_name: str = "QuarantineDenyAll"
+    account_id: Optional[str] = None
+    account_name: Optional[str] = None
+
+    # ★ 추가: 왜 확인불가/실패인지 알 수 있도록 이유 필드
+    reason_code: Optional[str] = None         # e.g. "AccessDeniedException", "NoSuchEntity"
+    reason_message: Optional[str] = None      # 짧은 설명
+    # verbose=1 일 때만 채워줄 수 있는 원문(선택)
+    error_raw: Optional[str] = None
+    
 class AwsCredentialOut(BaseModel):
     id: int
     user_id: int
@@ -92,6 +124,44 @@ def _sts_client(creds: AwsCredsIn):
         # session_token을 사용하지 않는 IAM 고정 키 시나리오이므로 생략
         config=cfg,
     )
+
+def _is_quarantined(iam, user_name: str, policy_name: str, debug: bool = False) -> bool:
+    """해당 IAM 유저에 policy_name이 인라인/관리형으로 붙었는지 확인"""
+    try:
+        attached = iam.list_attached_user_policies(UserName=user_name).get("AttachedPolicies", [])
+        inline = iam.list_user_policies(UserName=user_name).get("PolicyNames", [])
+        if debug:
+            print(f"[VERIFY] attached({len(attached)}): {[p.get('PolicyName') for p in attached]}")
+            print(f"[VERIFY] inline({len(inline)}): {inline}")
+        if any(p.get("PolicyName") == policy_name for p in attached):
+            return True
+        if any(n == policy_name for n in inline):
+            return True
+        # 인라인 단건 확인 (권한 없으면 예외)
+        try:
+            iam.get_user_policy(UserName=user_name, PolicyName=policy_name)
+            if debug:
+                print(f"[VERIFY] get_user_policy('{policy_name}') returned OK")
+            return True
+        except Exception as e:
+            if debug:
+                print(f"[VERIFY] get_user_policy('{policy_name}') -> {type(e).__name__}: {e}")
+            return False
+    except Exception as e:
+        if debug:
+            print(f"[VERIFY] list policies failed: {type(e).__name__}: {e}")
+        return False
+
+def _verify_with_retry(check_fn, attempts=3, delay_ms=300, label: str = "") -> bool:
+    for i in range(1, attempts+1):
+        ok = check_fn()
+        print(f"[VERIFY] attempt {i}/{attempts}{(' - ' + label) if label else ''}: {ok}")
+        if ok:
+            return True
+        time.sleep(delay_ms / 1000.0)
+    return False
+
+
 # ---------- API Endpoints ----------
 @router.post("/check", response_model=CheckResultOut, summary="Check IAM credentials by STS GetCallerIdentity")
 def check_credentials(
@@ -212,3 +282,253 @@ def delete_credential(
     db.delete(cred)
     db.commit()
     return {"ok": True, "deleted": name}
+
+# 변경: 항상 root 자격증명으로 확인하되, 오류가 나도 200으로 내려서 UI가 '확인불가'를 표시할 수 있게 함
+@router.get("/{name}/quarantine", response_model=QuarantineOut)
+def check_quarantine_for_credential(
+    user_id: int = Path(..., ge=1),
+    name: str = Path(..., min_length=1),
+    policy_name: str = Query("QuarantineDenyAll"),
+    verbose: int = Query(0, ge=0, le=1),                      # ★ 추가: 원문 노출 여부
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    # root 키 사용 (회원가입 때 저장)
+    root_user = db.query(User).filter(User.id == user_id).first()
+    if not root_user or not root_user.aws_access_key or not root_user.aws_secret_key:
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code="RootCredentialsMissing",
+            reason_message="User has no stored root credentials",
+        )
+
+    try:
+        iam = boto3.client(
+            "iam",
+            aws_access_key_id=root_user.aws_access_key,
+            aws_secret_access_key=root_user.aws_secret_key,
+        )
+
+        # 1) IAM 유저 확인
+        user_info = iam.get_user(UserName=name)
+        user_arn = user_info["User"]["Arn"]
+
+        # 2) 유저에 붙은 정책 조회 (관리형 + 인라인)
+        attached = iam.list_attached_user_policies(UserName=name)["AttachedPolicies"]
+        inline_names = iam.list_user_policies(UserName=name)["PolicyNames"]
+
+        quarantined = any(p["PolicyName"] == policy_name for p in attached) \
+            or any(p == policy_name for p in inline_names)
+
+        return QuarantineOut(
+            applied=quarantined,
+            policy_name=policy_name,
+            account_id=None,
+            account_name=None,
+        )
+
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "ClientError")
+        msg = e.response.get("Error", {}).get("Message", str(e))
+        return QuarantineOut(
+            applied=None,                                 # 확인불가
+            policy_name=policy_name,
+            reason_code=code,                             # ★ 왜인지 볼 수 있게
+            reason_message=msg[:200],
+            error_raw=(str(e)[:2000] if verbose else None),
+        )
+    except Exception as e:
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code="UnhandledException",
+            reason_message=str(e)[:200],
+            error_raw=(str(e)[:2000] if verbose else None),
+        )
+
+@router.post("/{name}/quarantine/apply", response_model=QuarantineOut)
+def apply_quarantine_policy(
+    user_id: int = Path(..., ge=1),
+    name: str = Path(..., min_length=1),
+    policy_name: str = Query("QuarantineDenyAll"),
+    verbose: int = Query(0, ge=0, le=1),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    print(f"\n[APPLY] ==== START user_id={user_id} name='{name}' policy_name='{policy_name}' ====")
+
+    root_user = db.query(User).filter(User.id == user_id).first()
+    if not root_user or not root_user.aws_access_key or not root_user.aws_secret_key:
+        print("[APPLY] Root credentials missing")
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code="RootCredentialsMissing",
+            reason_message="User has no stored root credentials",
+        )
+
+    # 루트 키 마스킹 출력
+    ak = root_user.aws_access_key
+    masked = f"{ak[:4]}{'*' * max(0, len(ak)-8)}{ak[-4:]}" if ak else "None"
+    print(f"[APPLY] Using ROOT AccessKeyId(masked)={masked}")
+
+    try:
+        # STEP 1) IAM 클라이언트 & 대상 유저 확인
+        iam = boto3.client(
+            "iam",
+            aws_access_key_id=root_user.aws_access_key,
+            aws_secret_access_key=root_user.aws_secret_key,
+        )
+        user_info = iam.get_user(UserName=name)
+        user_arn = user_info["User"]["Arn"]
+        created = user_info["User"].get("CreateDate")
+        print(f"[APPLY] STEP 1: get_user OK arn={user_arn} created={created}")
+
+        # STEP 2) 현재 부착 정책 나열(참고)
+        attached_before = iam.list_attached_user_policies(UserName=name).get("AttachedPolicies", [])
+        inline_before = iam.list_user_policies(UserName=name).get("PolicyNames", [])
+        print(f"[APPLY] STEP 2: before attached={ [p.get('PolicyName') for p in attached_before] }")
+        print(f"[APPLY] STEP 2: before inline={ inline_before }")
+
+        # STEP 3) put_user_policy 호출
+        policy_doc = json.dumps(QUARANTINE_DENY_ALL)
+        iam.put_user_policy(
+            UserName=name,
+            PolicyName=policy_name,
+            PolicyDocument=policy_doc,
+        )
+        print(f"[APPLY] STEP 3: put_user_policy('{policy_name}') sent")
+
+        # STEP 4) 재검증(재시도 포함)
+        ok = _verify_with_retry(
+            lambda: _is_quarantined(iam, name, policy_name, debug=bool(verbose)),
+            attempts=3,
+            delay_ms=400,
+            label=f"name={name} policy={policy_name}",
+        )
+        if not ok:
+            # 실패 시 직후 상태 스냅샷도 함께 출력
+            attached_after = iam.list_attached_user_policies(UserName=name).get("AttachedPolicies", [])
+            inline_after = iam.list_user_policies(UserName=name).get("PolicyNames", [])
+            print(f"[APPLY] STEP 4: after attached={ [p.get('PolicyName') for p in attached_after] }")
+            print(f"[APPLY] STEP 4: after inline={ inline_after }")
+            print("[APPLY] VERIFICATION FAILED: policy not observed after retries")
+            return QuarantineOut(
+                applied=None,
+                policy_name=policy_name,
+                reason_code="ApplyVerificationFailed",
+                reason_message="put_user_policy succeeded but policy not visible after retries",
+            )
+
+        print("[APPLY] STEP 4: verification OK -> applied=True")
+        print(f"[APPLY] ==== DONE name='{name}' ====")
+        return QuarantineOut(
+            applied=True,
+            policy_name=policy_name,
+        )
+
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "ClientError")
+        msg = e.response.get("Error", {}).get("Message", str(e))
+        print(f"[APPLY][ClientError] code={code} msg={msg}")
+        if verbose:
+            print(f"[APPLY][ClientError][raw] {e}")
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code=code,
+            reason_message=msg[:200],
+            error_raw=(str(e)[:2000] if verbose else None),
+        )
+    except Exception as e:
+        print(f"[APPLY][Unhandled] {type(e).__name__}: {e}")
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code="UnhandledException",
+            reason_message=str(e)[:200],
+            error_raw=(str(e)[:2000] if verbose else None),
+        )
+
+
+
+@router.delete("/{name}/quarantine", response_model=QuarantineOut)
+def remove_quarantine_policy(
+    user_id: int = Path(..., ge=1),
+    name: str = Path(..., min_length=1),
+    policy_name: str = Query("QuarantineDenyAll"),
+    verbose: int = Query(0, ge=0, le=1),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    root_user = db.query(User).filter(User.id == user_id).first()
+    if not root_user or not root_user.aws_access_key or not root_user.aws_secret_key:
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code="RootCredentialsMissing",
+            reason_message="User has no stored root credentials",
+        )
+
+    try:
+        iam = boto3.client(
+            "iam",
+            aws_access_key_id=root_user.aws_access_key,
+            aws_secret_access_key=root_user.aws_secret_key,
+        )
+
+        # 대상 유저 확인
+        iam.get_user(UserName=name)
+
+        # 인라인 정책 삭제 (존재하지 않으면 NoSuchEntity 가능)
+        try:
+            iam.delete_user_policy(UserName=name, PolicyName=policy_name)
+        except ClientError as e:
+            # 정책이 없었으면 OK로 처리
+            if e.response.get("Error", {}).get("Code") != "NoSuchEntity":
+                raise
+
+        # ★ 해제 검증 (재시도 포함)
+        ok = _verify_with_retry(lambda: not _is_quarantined(iam, name, policy_name))
+        if not ok:
+            return QuarantineOut(
+                applied=None,
+                policy_name=policy_name,
+                reason_code="RemoveVerificationFailed",
+                reason_message="delete_user_policy succeeded but policy still visible after retries",
+            )
+
+        return QuarantineOut(
+            applied=False,
+            policy_name=policy_name,
+        )
+
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "ClientError")
+        msg = e.response.get("Error", {}).get("Message", str(e))
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code=code,
+            reason_message=msg[:200],
+            error_raw=(str(e)[:2000] if verbose else None),
+        )
+    except Exception as e:
+        return QuarantineOut(
+            applied=None,
+            policy_name=policy_name,
+            reason_code="UnhandledException",
+            reason_message=str(e)[:200],
+            error_raw=(str(e)[:2000] if verbose else None),
+        )
+

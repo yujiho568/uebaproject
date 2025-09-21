@@ -156,7 +156,7 @@ function LineChart({ title, series, width = 720, height = 260 }) {
         {poly ? (
           <polyline fill="none" stroke="#3b82f6" strokeWidth="2" points={poly} />
         ) : (
-          <text x={width/2} y={height / 2} fill="#6b7280">No Data</text>
+          <text x={width / 2} y={height / 2} fill="#6b7280">No Data</text>
         )}
 
         {/* 툴팁 */}
@@ -433,12 +433,19 @@ function Dashboard() {
     if (!me?.id || !selectedCred) return;
     setMessage({ type: 'info', text: 'S3에서 JSON을 가져와 DB 업데이트 중...' });
     setSyncing(true);
+    let S3_BUCKET = 'ct-pipeline-bucket-myunique-123'; // 기본값 (회원가입 시 저장한 Root 자격증명 사용)
+    if (selectedCred !== 'uebauser1') {
+      // 기존 로직 유지: 저장된 이름에 따라 버킷 결정
+      const CryptoJS = require('crypto-js');
+      S3_BUCKET = `ct-pipeline-bucket-u${CryptoJS.MD5(savedName).toString().slice(0, 8)}`;
+      console.log(`Using S3 Bucket: ${S3_BUCKET}`);
+    }
     try {
       const res = await fetch(`${API_BASE}/results/${me.id}/import-s3`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader },
         body: JSON.stringify({
-          credential_name: selectedCred,
+          credential_name: "__USER_ROOT__",
           bucket: S3_BUCKET,
           prefix: S3_PREFIX,
           region: creds.find(c => c.name === selectedCred)?.region || 'ap-northeast-2',

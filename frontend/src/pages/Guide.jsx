@@ -12,20 +12,20 @@ export default function Guide() {
     () => [
       {
         id: "intro",
-    title: "Terraform 설치",
-    body: (
-      <div className="space-y-3 text-gray-700">
-        <p>
-          <a
-            href="https://console.aws.amazon.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline hover:text-blue-800"
-          >
-            AWS Console
-          </a>
-          에 접속하여 테라폼을 설치합니다.
-        </p>
+        title: "Terraform 설치",
+        body: (
+          <div className="space-y-3 text-gray-700">
+            <p>
+              <a
+                href="https://console.aws.amazon.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                AWS Console
+              </a>
+              에 접속하여 테라폼을 설치합니다.
+            </p>
             <img
               width="100%"
               src="/step1.png"
@@ -250,23 +250,22 @@ docker buildx build \
       </div>
 
       {/* Nav Buttons */}
-      <div className="mt-6 flex items-center gap-3">
+      {/* Nav Buttons */}
+      <div className="mt-6 flex w-full justify-between px-6">
         <button
           type="button"
           onClick={prev}
           disabled={atStart}
-          className="px-4 py-2 rounded-2xl border border-gray-400 bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 hover:shadow-sm font-medium"
-          aria-disabled={atStart}
-          style={{ width: '10%', padding: 10, marginBottom: 12, backgroundColor: '#1e3a8a', color: '#ffffff', border: 'none', borderRadius: 4 }}
+          className="h-12 w-32 rounded-md bg-blue-900 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 shadow-sm"
         >
           Back
         </button>
+
         {atEnd ? (
           <button
             type="button"
             onClick={restart}
-            //className="px-4 py-2 rounded-2xl bg-gray-900 text-white hover:opacity-90"
-            style={{ width: '10%', padding: 10, marginBottom: 12,marginLeft : 800, backgroundColor: '#1e3a8a', color: '#ffffff', border: 'none', borderRadius: 4 }}
+            className="h-12 w-32 rounded-md bg-blue-900 text-white font-medium hover:bg-blue-800 shadow-sm"
           >
             Start Over
           </button>
@@ -274,14 +273,13 @@ docker buildx build \
           <button
             type="button"
             onClick={next}
-            //className="px-4 py-2 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md transition-colors font-semibold"
-            
-            style={{ width: '10%', padding: 10, marginBottom: 12,marginLeft : 800, backgroundColor: '#1e3a8a', color: '#ffffff', border: 'none', borderRadius: 4 }}
+            className="h-12 w-32 rounded-md bg-blue-900 text-white font-medium hover:bg-blue-800 shadow-sm"
           >
             Next
           </button>
         )}
       </div>
+
 
       {/* Small helper text */}
       {/* <p className="mt-3 text-xs text-gray-500">Tip: Press <kbd>Enter</kbd> or <kbd>→</kbd> to go next, <kbd>←</kbd> to go back.</p> */}

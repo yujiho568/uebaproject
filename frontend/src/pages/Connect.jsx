@@ -27,6 +27,7 @@ function Connect() {
 
   // 토큰 가져오는 헬퍼 (프로덕션에 맞춰 교체)
   const getToken = () => localStorage.getItem('access_token');
+
   // ── 현재 로그인 사용자 불러오기 (/me) ───────────────────
   useEffect(() => {
     const fetchMe = async () => {
@@ -117,12 +118,13 @@ function Connect() {
       if (!res.ok) throw new Error(data?.detail || `자격증명 저장 실패 (${res.status})`);
       const savedName = data.name;
 
+      // 기존 로직 유지: 저장된 이름에 따라 버킷 결정
       if (savedName !== 'uebauser1') {
         S3_BUCKET = `ct-pipeline-bucket-u${CryptoJS.MD5(savedName).toString().slice(0, 8)}`;
         console.log(`Using S3 Bucket: ${S3_BUCKET}`);
       }
 
-      // 3) S3 → DB 적재
+      // 3) S3 → DB 적재 (항상 회원가입 시 저장한 Root 자격증명 사용)
       setMsg({ type: 'info', text: 'S3에서 JSON 가져와 DB에 저장 중...' });
       res = await fetch(`${API_BASE}/results/${me.id}/import-s3`, {
         method: 'POST',
@@ -131,7 +133,7 @@ function Connect() {
           ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
         },
         body: JSON.stringify({
-          credential_name: savedName,
+          credential_name: "__USER_ROOT__", // ★ 여기만 고정: Root 사용
           bucket: S3_BUCKET,
           prefix: S3_PREFIX,
           region: form.region,
@@ -223,8 +225,7 @@ function Connect() {
         {msg && (
           <div role="alert" style={{
             marginTop: 14, padding: '10px 12px', borderRadius: 8,
-            border: `1px solid ${msg.type === 'error' ? '#ef4444' : (msg.type === 'info' ? '#60a5fa' : '#10b981')
-              }`,
+            border: `1px solid ${msg.type === 'error' ? '#ef4444' : (msg.type === 'info' ? '#60a5fa' : '#10b981')}`,
             background: msg.type === 'error' ? '#fee2e2' : (msg.type === 'info' ? '#dbeafe' : '#d1fae5'),
             whiteSpace: 'pre-wrap'
           }}>
