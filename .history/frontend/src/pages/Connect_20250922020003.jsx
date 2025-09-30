@@ -13,7 +13,7 @@ function Connect() {
     secretAccessKey: '',
     region: 'ap-northeast-2',
   });
-  // a;ldskfjla;
+
   const [showSecret, setShowSecret] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [msg, setMsg] = useState(null); // { type: 'success'|'error'|'info', text: string }
